@@ -1,0 +1,80 @@
+[
+  {
+    "id": "heading-number-text",
+    "description": "顿号后的年龄和‘一个’属于标题正文，不是多级编号",
+    "sources": ["https://mp.weixin.qq.com/s/XuQtbup1euwfUaPe24Kcbg"],
+    "body": "<p><strong style=\"font-size:16px\">1、25岁的焦虑</strong></p><p>本段为普通正文，用来隔开不同的章节。</p><p><strong style=\"font-size:16px\">2、一个床位</strong></p><p>本段为普通正文，用来隔开不同的章节。</p><p><strong style=\"font-size:16px\">3、室友</strong></p><p>本段为普通正文，用来隔开不同的章节。</p>",
+    "expected": {"headings": ["1、25岁的焦虑", "2、一个床位", "3、室友"], "nested": []}
+  },
+  {
+    "id": "pt-parent-child",
+    "description": "pt 字号与章节后紧跟细分标题；不得合成一个标题",
+    "sources": ["https://mp.weixin.qq.com/s/GGiCdarIErTLQUr9u-PRqQ"],
+    "body": "<p style=\"text-align:center\"><span style=\"font-size:12pt;font-weight:700\">一、日程</span></p><p>这是一段足够长的普通正文，用于隔开章节并保留上下文，不应被视为任何标题或其他元数据。</p><p style=\"text-align:center\"><span style=\"font-size:12pt;font-weight:700\">二、故事</span></p><p><span style=\"font-size:12pt;font-weight:700\">恋爱</span></p><p>这是一段足够长的普通正文，用于隔开章节并保留上下文，不应被视为任何标题或其他元数据。</p>",
+    "expected": {"headings": ["一、日程", "二、故事"], "nested": [], "paragraphs": ["恋爱"]}
+  },
+  {
+    "id": "byline-before-calibration",
+    "description": "采写署名不得污染首标题基准；问句与真正章节字号不同",
+    "sources": ["https://mp.weixin.qq.com/s/EgwZrWjKftjEsl9YlqbubA"],
+    "body": "<p><strong style=\"font-size:15px\">采写 | 明亮</strong></p><h3 style=\"font-size:17px;font-weight:bold\">晨间散步</h3><p>这是一段普通的正文，描述日常观察，不应和前后的标题混合。</p><h3 style=\"font-size:17px;font-weight:bold\">午后阅读</h3><p>这是一段普通的正文，描述日常观察，不应和前后的标题混合。</p><p><strong style=\"font-size:15px\">记者：你喜欢什么书？</strong></p><p>受访者：我喜欢故事书。</p>",
+    "expected": {"author": "明亮", "headings": ["晨间散步", "午后阅读"], "paragraphs": ["记者：你喜欢什么书？"], "deleted": ["采写 | 明亮"]}
+  },
+  {
+    "id": "single-chinese-number",
+    "description": "独立中文序号长度为一，仍可作为标题",
+    "sources": ["https://mp.weixin.qq.com/s/_4HjrsOTbu6igyYrQI9xBQ"],
+    "body": "<p style=\"text-align:center\"><span style=\"font-size:12pt;font-weight:700\">一</span></p><p>这是一段超过二十个字符的正文，用于防止将正文误当作编号后面的标题文字。</p><p style=\"text-align:center\"><span style=\"font-size:12pt;font-weight:700\">二</span></p><p>这是一段超过二十个字符的正文，用于防止将正文误当作编号后面的标题文字。</p><p style=\"text-align:center\"><span style=\"font-size:12pt;font-weight:700\">三</span></p><p>这是一段超过二十个字符的正文，用于防止将正文误当作编号后面的标题文字。</p>",
+    "expected": {"headings": ["一", "二", "三"], "pureNumbers": true}
+  },
+  {
+    "id": "ql-size",
+    "description": "字号只有 ql-size-12 类名，不依赖网页在线样式",
+    "sources": ["https://mp.weixin.qq.com/s/1Rd4BVmMgvFq-2a4iMnYQw"],
+    "body": "<p style=\"text-align:center\"><strong class=\"ql-size-12\">一</strong></p><p>这是一段超过二十个字符的正文，用于防止将正文误当作编号后面的标题文字。</p><p style=\"text-align:center\"><strong class=\"ql-size-12\">二</strong></p><p>这是一段超过二十个字符的正文，用于防止将正文误当作编号后面的标题文字。</p>",
+    "expected": {"headings": ["一", "二"], "pureNumbers": true}
+  },
+  {
+    "id": "split-heading-number",
+    "description": "换行合并时不把已经剥离的 04 写回 subText",
+    "sources": ["https://mp.weixin.qq.com/s/wKNhJxnxyBlQDrmF1aGYBA"],
+    "body": "<p><strong style=\"font-size:28px\">01准备</strong></p><p>这是一段正文，用于隔开标题。</p><p><strong style=\"font-size:28px\">02观察</strong></p><p>这是一段正文，用于隔开标题。</p><p><strong style=\"font-size:28px\">03记录</strong></p><p>这是一段正文，用于隔开标题。</p><p><strong style=\"font-size:28px\">04 先观察，</strong></p><p><strong style=\"font-size:28px\">再行动</strong></p><p>这是一段正文，用于隔开标题。</p>",
+    "expected": {"headings": ["01准备", "02观察", "03记录", "04 先观察，再行动"], "subTexts": ["准备", "观察", "记录", "先观察，再行动"]}
+  },
+  {
+    "id": "nested-size-sequence",
+    "description": "三个大字号章节后重启的小字号编号属于细分标题",
+    "sources": ["https://mp.weixin.qq.com/s/ufpduWm1rzfFeKgZICcHhw"],
+    "body": "<p><strong style=\"font-size:28px\">01准备</strong></p><p>这是第一段正文。</p><p><strong style=\"font-size:28px\">02观察</strong></p><p>这是第二段正文。</p><p><strong style=\"font-size:28px\">03行动</strong></p><p>这是第三段正文。</p><p><strong style=\"font-size:17px\">1. 记录天气</strong></p><p>这是第一项说明。</p><p><strong style=\"font-size:17px\">2. 查看地图</strong></p><p>这是第二项说明。</p><p><strong style=\"font-size:17px\">3. 准备行李</strong></p><p>这是第三项说明。</p><p><strong style=\"font-size:17px\">4. 按时出发</strong></p><p>这是第四项说明。</p>",
+    "expected": {"headings": ["01准备", "02观察", "03行动"], "nested": ["1. 记录天气", "2. 查看地图", "3. 准备行李", "4. 按时出发"]}
+  },
+  {
+    "id": "first-heading-format",
+    "description": "不同行内小字短语不计入已确认的大字号编号标题体系",
+    "sources": ["https://mp.weixin.qq.com/s/i13Uph9y2RH2Ywl8seZ0YA"],
+    "body": "<p><strong style=\"font-size:28px\">01观察云朵</strong></p><p>这是介绍云朵的正文。</p><p><strong style=\"font-size:28px\">02记录颜色</strong></p><p>这是介绍颜色的正文。</p><p><strong style=\"font-size:16px\">《云彩手册》</strong></p><p>这里介绍一本书。</p><p><strong style=\"font-size:16px\">罕见度说明</strong></p><p>这里是普通说明。</p>",
+    "expected": {"headings": ["01观察云朵", "02记录颜色"], "paragraphs": ["《云彩手册》", "罕见度说明"]}
+  },
+  {
+    "id": "caption-period",
+    "description": "图片后短句可以带句号、冒号；inherit 容器也要识别",
+    "sources": ["https://mp.weixin.qq.com/s/GGiCdarIErTLQUr9u-PRqQ"],
+    "body": "<p><img data-src=\"https://example.invalid/1.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p><p>吉林白山。</p><p><img data-src=\"https://example.invalid/2.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p><p><span style=\"font-size:14px;color:#888\">吉林珲春。</span></p><p><img data-src=\"https://example.invalid/3.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p><inherit style=\"display:block\">黑龙江虎林。</inherit><p><img data-src=\"https://example.invalid/4.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p><inherit style=\"display:block\">拍摄：示例作者。</inherit><p><img data-src=\"https://example.invalid/5.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p><p>绥芬河。</p>",
+    "expected": {"images": 5, "captions": ["吉林白山。", "吉林珲春。", "黑龙江虎林。", "拍摄：示例作者。", "绥芬河。"], "headings": []}
+  },
+  {
+    "id": "top-star-images",
+    "description": "顶部星标提示不能导致后续正文图片全部被丢弃",
+    "sources": ["https://mp.weixin.qq.com/s/YdAK8Z1uxy_1R0tcrYA5RQ"],
+    "body": "<p>点击上方星标，以防失联</p><p>这是图片之前的普通正文。</p><section><img data-src=\"https://example.invalid/1.png\" data-w=\"1080\" data-ratio=\"0.75\"></section><section><img data-src=\"https://example.invalid/2.jpg\" data-w=\"1000\" data-ratio=\"0.557\"></section><section><img data-src=\"https://example.invalid/3.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></section><section><img data-src=\"https://example.invalid/4.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></section><section><img data-src=\"https://example.invalid/5.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></section>",
+    "expected": {"images": 5, "headings": []}
+  },
+  {
+    "id": "copyright-after-end",
+    "description": "结束符后题图版权保留且不占正午故事的一条附注名额",
+    "sources": ["https://mp.weixin.qq.com/s/IuL-FFcfuhuh6ODsicA29w"],
+    "account": "正午故事",
+    "body": "<p>结束之前的正文。</p><p style=\"font-size:18px\"><strong>—  —完—  —</strong></p><p>题图来源：视觉中国</p><p>第一条附注。</p><p>第二条附注必须删除。</p><p><img data-src=\"https://example.invalid/tail.jpg\" data-w=\"1000\" data-ratio=\"0.75\"></p>",
+    "expected": {"images": 0, "headings": [], "copyrights": ["题图来源：视觉中国"], "paragraphs": ["结束之前的正文。", "第一条附注。"], "absent": ["第二条附注必须删除。", "—  —完—  —"]}
+  }
+]

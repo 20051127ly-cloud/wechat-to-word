@@ -1,0 +1,27 @@
+{
+  "name": "wechat-to-word",
+  "version": "1.0.0",
+  "description": "微信公众号文章抓取并导出为排版完整的 Word 文档",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test --test-reporter=spec tests/parser.test.js tests/docx.test.js tests/fetcher.test.js tests/imageSize.test.js tests/concurrency.test.js tests/search.test.js tests/searchSources.test.js tests/xlsx.test.js tests/pipeline.test.js tests/risk.test.js",
+    "test:baseline": "node --test --test-reporter=spec tests/parser.test.js tests/docx.test.js tests/fetcher.test.js tests/imageSize.test.js tests/concurrency.test.js tests/search.test.js tests/searchSources.test.js tests/xlsx.test.js tests/pipeline.test.js",
+    "test:risks": "node --test --test-reporter=spec tests/risk.test.js",
+    "test:watch": "node --test --watch --test-reporter=spec tests/parser.test.js tests/docx.test.js tests/fetcher.test.js tests/imageSize.test.js tests/concurrency.test.js tests/search.test.js tests/searchSources.test.js tests/xlsx.test.js tests/pipeline.test.js tests/risk.test.js",
+    "test:report": "node --test --test-reporter=dot --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=test-results.xml tests/parser.test.js tests/docx.test.js tests/fetcher.test.js tests/imageSize.test.js tests/concurrency.test.js tests/search.test.js tests/searchSources.test.js tests/xlsx.test.js tests/pipeline.test.js tests/risk.test.js",
+    "test:online": "node --test --test-concurrency=1 --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=online-test-results.xml tests/online.test.js",
+    "test:all": "node --test --test-concurrency=1 --test-reporter=spec tests/parser.test.js tests/docx.test.js tests/fetcher.test.js tests/imageSize.test.js tests/concurrency.test.js tests/search.test.js tests/searchSources.test.js tests/xlsx.test.js tests/pipeline.test.js tests/risk.test.js tests/online.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "cheerio": "^1.1.0",
+    "docx": "^9.7.1",
+    "express": "^5.2.1",
+    "jimp": "^0.22.12",
+    "jsqr": "^1.4.0"
+  }
+}

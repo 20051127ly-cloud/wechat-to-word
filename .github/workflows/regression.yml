@@ -1,0 +1,29 @@
+name: Regression tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:report
+      - name: Upload test results even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-results
+          path: test-results.xml
+          if-no-files-found: warn

@@ -1,0 +1,4 @@
+{
+  "_说明": "公众号名输出映射：key 为抓取到的原名，value 为汇总表格里统一显示的名称。匹配忽略大小写与空格标点，因此『know yourself』也能命中。",
+  "KnowYourself": "KnowYourself知我心理"
+}

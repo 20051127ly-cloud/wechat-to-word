@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: wechat-to-word
+    runtime: node
+    plan: free
+    region: oregon          # 如微信抓取失败，可改 singapore / frankfurt 等亚太节点
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "10000"       # Render 会覆盖为平台分配端口，server.js 已支持 $PORT

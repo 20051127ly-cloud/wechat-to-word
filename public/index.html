@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公众号文章 → Word 自动化工具</title>
+  <style>
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --text: #1f2430;
+      --muted: #7a8194;
+      --border: #e6e8ee;
+      --psy: #0f4761;
+      --psy-light: #e8f1f6;
+      --doc: #b3541e;
+      --doc-light: #fbece2;
+      --hui: #0d7a5f;
+      --hui-light: #e3f4ee;
+      --accent: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      position: relative;
+    }
+    /* 背景图层（莲花池 + 禅字），透出 + 轻蒙版保证可读性 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: url('/assets/bg.png') center/cover no-repeat;
+      opacity: 0.9;
+      z-index: -2;
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.32) 100%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .container { width: 100%; max-width: 1200px; position: relative; z-index: 1; }
+
+    header { text-align: center; margin-bottom: 32px; }
+    header h1 {
+      font-size: 26px; font-weight: 700; letter-spacing: 1px;
+      color: rgba(255,255,255,0.96);
+      text-shadow: 0 1px 12px rgba(0,0,0,0.25);
+    }
+    header p {
+      color: rgba(255,255,255,0.85);
+      font-size: 14px; margin-top: 8px;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.2);
+    }
+
+    /* 三个并列工作区 */
+    .panes {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+    /* 液态玻璃卡片：高透 + 强模糊 + 饱和增强 + 高光描边 */
+    .pane {
+      background: linear-gradient(135deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.16) 100%);
+      backdrop-filter: blur(26px) saturate(180%);
+      -webkit-backdrop-filter: blur(26px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.42);
+      border-radius: 22px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.14),
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        inset 0 -1px 0 rgba(255,255,255,0.12);
+    }
+    .pane.psy { border-top: 3px solid rgba(15,71,97,0.85); }
+    .pane.doc { border-top: 3px solid rgba(179,84,30,0.85); }
+    .pane.hui { border-top: 3px solid rgba(13,122,95,0.85); }
+
+    .pane-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .pane-icon { font-size: 22px; }
+    .pane-name {
+      font-size: 20px; font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 10px rgba(0,0,0,0.3);
+    }
+
+    label {
+      display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px;
+      color: rgba(255,255,255,0.92);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+    }
+    textarea {
+      width: 100%; min-height: 110px; border: 1px solid rgba(255,255,255,0.45); border-radius: 12px;
+      padding: 12px; font-size: 13.5px; font-family: inherit; resize: vertical;
+      line-height: 1.6; color: #1f2430; outline: none; transition: border-color .15s, box-shadow .15s;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    textarea:focus {
+      border-color: rgba(255,255,255,0.9);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+    }
+    textarea::placeholder { color: rgba(31,36,48,0.45); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 14px; width: 100%; padding: 12px; border: none; border-radius: 12px;
+      font-size: 15px; font-weight: 700; color: #fff; cursor: pointer;
+      transition: opacity .15s, transform .1s, box-shadow .15s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn:not(:disabled):active { transform: scale(.98); }
+    .btn.psy { background: linear-gradient(135deg, #175e7e, #0f4761); }
+    .btn.doc { background: linear-gradient(135deg, #c9652b, #b3541e); }
+    .btn.hui { background: linear-gradient(135deg, #0e8a6a, #0d7a5f); }
+
+    .tips {
+      margin-top: 14px; font-size: 12px; line-height: 1.85;
+      color: rgba(255,255,255,0.82);
+      text-shadow: 0 1px 5px rgba(0,0,0,0.18);
+    }
+
+    .status {
+      margin-top: 16px; display: none; padding: 12px 14px; border-radius: 12px;
+      font-size: 13px; line-height: 1.6;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .status.show { display: block; }
+    .status.working { background: rgba(238,244,255,0.6); color: #1d4ed8; }
+    .status.done { background: rgba(233,249,239,0.6); color: #15803d; }
+    .status.error { background: rgba(253,236,236,0.65); color: #b91c1c; }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor;
+      border-top-color: transparent; border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: -2px; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 批量抓取卡片 */
+    .batch-pane {
+      margin-top: 24px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.16) 100%);
+      backdrop-filter: blur(26px) saturate(180%);
+      -webkit-backdrop-filter: blur(26px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.42);
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow:
+        0 8px 32px rgba(0,0,0,0.14),
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        inset 0 -1px 0 rgba(255,255,255,0.12);
+    }
+    .batch-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .batch-icon { font-size: 22px; }
+    .batch-name {
+      font-size: 20px; font-weight: 700; color: #fff;
+      text-shadow: 0 1px 10px rgba(0,0,0,0.3);
+    }
+    .batch-options {
+      display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .batch-option {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 999px; cursor: pointer;
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.92); font-size: 14px; font-weight: 600;
+      transition: background .15s;
+    }
+    .batch-option.active {
+      background: rgba(255,255,255,0.85); color: #1f2430;
+      border-color: rgba(255,255,255,0.9);
+    }
+    .batch-option input { display: none; }
+    .batch-textarea { min-height: 140px; }
+    .batch-count {
+      margin-top: 10px; font-size: 12.5px; color: rgba(255,255,255,0.85);
+      text-shadow: 0 1px 5px rgba(0,0,0,0.18);
+    }
+    .btn.batch { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+
+    /* 汇编 tab 切换条（链接 / 文档） */
+    .assemble-tabs {
+      display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .assemble-tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 18px; border-radius: 999px; cursor: pointer;
+      background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.92); font-size: 14px; font-weight: 600;
+      transition: background .15s;
+      font-family: inherit;
+    }
+    .assemble-tab.active {
+      background: rgba(255,255,255,0.85); color: #1f2430;
+      border-color: rgba(255,255,255,0.9);
+    }
+    .assemble-panel { display: none; }
+    .assemble-panel.active { display: block; }
+
+    /* 文档 tab 占位（功能开发中） */
+    .doc-placeholder {
+      text-align: center; padding: 48px 20px;
+      color: rgba(255,255,255,0.85);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+    }
+    .doc-placeholder-icon { font-size: 48px; margin-bottom: 12px; line-height: 1; }
+    .doc-placeholder-title {
+      font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 6px;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.25);
+    }
+    .doc-placeholder-desc { font-size: 13px; opacity: 0.88; }
+
+    @media (max-width: 980px) {
+      .panes { grid-template-columns: 1fr; }
+      header h1 { font-size: 21px; }
+    }
+  
+
+  /* === print-for-pdf === */
+  @media print{
+    @page{size:A4;margin:6mm}
+    html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:#fff!important;background-image:none!important;color:#1f2430!important;padding:0!important}
+    body::before,body::after{display:none!important}
+    .container{max-width:100%!important}
+    header h1,header p,.pane-name,label,.pane-icon{color:#1f2430!important;text-shadow:none!important}
+    .pane{background:#fff!important;border:1px solid #c9d2e0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+    .pane.psy{border-top:3px solid #0f4761!important}
+    .pane.doc{border-top:3px solid #b3541e!important}
+    .pane.hui{border-top:3px solid #0d7a5f!important}
+    textarea{color:#1f2430!important;background:#f3f5f9!important}
+    button,.btn,.assemble-tab{color:#1f2430!important;border:1px solid #ccd4e0!important}
+  }
+
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>公众号文章 → Word 自动化工具</h1>
+      <p>三个类别面板同时提供，按需选择入口抓取并导出 Word</p>
+    </header>
+
+    <div class="panes">
+      <!-- 轻心理 -->
+      <div class="pane psy">
+        <div class="pane-head">
+          <span class="pane-icon">🧠</span>
+          <span class="pane-name">轻心理</span>
+        </div>
+        <label for="url-psy">粘贴微信公众号文章链接</label>
+        <textarea id="url-psy" placeholder="https://mp.weixin.qq.com/s/xxxxxx"></textarea>
+        <button class="btn psy" id="btn-psy" onclick="convert('psy')">抓取并导出 Word</button>
+        <div class="tips">
+          · 自动提取标题、作者、正文、图片、参考文献<br />
+          · 参考文献逐条独立排版<br />
+          · 自动删除顶部二维码、底部推广、留言互动区并红色标注<br />
+          · 视频 / 音频不嵌入，转为链接备注<br />
+          · 文件名格式：文章标题（轻心理）
+        </div>
+        <div class="status" id="status-psy"></div>
+      </div>
+
+      <!-- 轻纪实 -->
+      <div class="pane doc">
+        <div class="pane-head">
+          <span class="pane-icon">📰</span>
+          <span class="pane-name">轻纪实</span>
+        </div>
+        <label for="url-doc">粘贴微信公众号文章链接</label>
+        <textarea id="url-doc" placeholder="https://mp.weixin.qq.com/s/xxxxxx"></textarea>
+        <button class="btn doc" id="btn-doc" onclick="convert('doc')">抓取并导出 Word</button>
+        <div class="tips">
+          · 自动提取标题、作者、正文、图片<br />
+          · 视觉中国 / 东方 IC / 人民视觉图源红色版权提醒<br />
+          · 自动删除顶部二维码、底部推广、留言互动区并红色标注<br />
+          · 视频 / 音频不嵌入，转为链接备注<br />
+          · 文件名格式：文章标题（轻纪实）
+        </div>
+        <div class="status" id="status-doc"></div>
+      </div>
+
+      <!-- 汇编：链接 / 文档 两个子功能 tab -->
+      <div class="pane hui">
+        <div class="pane-head">
+          <span class="pane-icon">🗂️</span>
+          <span class="pane-name">汇编</span>
+        </div>
+
+        <div class="assemble-tabs" id="assemble-tabs">
+          <button type="button" class="assemble-tab active" data-tab="link">🔗 链接</button>
+          <button type="button" class="assemble-tab" data-tab="search">🔍 搜索汇编</button>
+          <button type="button" class="assemble-tab" data-tab="doc">📄 文档</button>
+        </div>
+
+        <div class="assemble-panel active" id="panel-link">
+          <label for="url-hui">粘贴多个文章链接（每行一个，或直接粘贴含多个链接的文字）</label>
+          <textarea id="url-hui" placeholder="https://mp.weixin.qq.com/s/xxxxxx&#10;https://mp.weixin.qq.com/s/yyyyyy&#10;……"></textarea>
+          <button class="btn hui" id="btn-hui" onclick="assemble()">批量抓取并整合成一个 Word</button>
+          <div class="tips">
+            · 自动识别粘贴内容中的全部微信链接（去重、按顺序）<br />
+            · 多篇文章整合到一个 Word，每篇自动另起一页<br />
+            · 自动提取标题、作者、正文、图片、参考文献<br />
+            · 自动删除顶部二维码、底部推广、留言互动区并红色标注<br />
+            · 视频 / 音频不嵌入，转为链接备注
+          </div>
+          <div class="status" id="status-hui"></div>
+        </div>
+
+        <div class="assemble-panel" id="panel-search">
+          <label for="search-hui">粘贴文章标题列表（用「公众号：」指定公众号，其后每行一个标题；行尾可带类别标注）</label>
+          <textarea id="search-hui" placeholder="公众号：人物&#10;亲爱的招弟（轻纪实）&#10;马诺 代价（轻纪实）&#10;县城妈妈，“逃离”县城（轻纪实）&#10;……"></textarea>
+          <button class="btn hui" id="btn-search-hui" onclick="assembleSearch()">搜索定位并汇编成一个 Word</button>
+          <div class="tips">
+            · 自动在微信文章库中搜索定位每篇文章，输出链接并汇编成一个 Word<br />
+            · zip 内附「搜索定位结果」Excel 清单（含每篇链接与失败原因）<br />
+            · 搜索逐篇限速进行，每篇约 5～10 秒，40 篇预计 5 分钟左右<br />
+            · 单次最多 60 篇；个别文章若未被搜索引擎收录会在清单中标注
+          </div>
+          <div class="status" id="status-search-hui"></div>
+
+          <!-- 续跑区：失败篇目一键填入输入框重跑 -->
+          <div id="retry-box" style="display:none; margin-top: 14px;">
+            <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 6px;">
+              未成功 <span id="retry-count">0</span> 篇 —— 可直接续跑（已定位的不会重复搜索）
+            </div>
+            <textarea id="retry-text" readonly rows="6"
+              style="width:100%; font-size: 13px; line-height: 1.6; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.45); background: rgba(255,255,255,0.16); color: #fff; resize: vertical; font-family: inherit;"></textarea>
+            <button class="btn hui" id="btn-retry" style="margin-top: 8px; padding: 8px 18px; font-size: 14px;"
+              onclick="retryFailed()">🔄 一键续跑（填入上方输入框并重跑）</button>
+            <div style="font-size: 12.5px; opacity: 0.9; margin-top: 6px;">
+              提示：搜狗有限流，隔一段时间再续跑成功率更高；也可把人工查到的链接直接贴在标题后
+            </div>
+          </div>
+        </div>
+
+        <div class="assemble-panel" id="panel-doc">
+          <div class="doc-placeholder">
+            <div class="doc-placeholder-icon">📄</div>
+            <div class="doc-placeholder-title">文档功能开发中</div>
+            <div class="doc-placeholder-desc">后续将支持上传本地文档自动排版，敬请期待。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量抓取 -->
+    <div class="batch-pane">
+      <div class="batch-head">
+        <span class="batch-icon">📦</span>
+        <span class="batch-name">批量抓取</span>
+      </div>
+
+      <div class="batch-options" id="batch-options">
+        <label class="batch-option active" data-cat="轻心理">
+          <input type="radio" name="batch-cat" value="轻心理" checked />🧠 轻心理
+        </label>
+        <label class="batch-option" data-cat="轻纪实">
+          <input type="radio" name="batch-cat" value="轻纪实" />📰 轻纪实
+        </label>
+      </div>
+
+      <label for="batch-text">粘贴多个文章链接（每行一个，或直接粘贴包含多个链接的文字，自动识别）</label>
+      <textarea class="batch-textarea" id="batch-text" placeholder="例如：&#10;https://mp.weixin.qq.com/s/xxxxxx&#10;https://mp.weixin.qq.com/s/yyyyyy&#10;……"></textarea>
+      <div class="batch-count" id="batch-count"></div>
+
+      <button class="btn batch" id="btn-batch" onclick="convertBatch()">批量抓取并导出 Zip</button>
+
+      <div class="tips">
+        · 自动识别粘贴内容中的全部微信链接（去重）<br />
+        · 整批统一使用上方选中的类别<br />
+        · 全部生成 Word 后打包成一个 zip 下载<br />
+        · 附「批量抓取结果.txt」记录每篇成功/失败情况
+      </div>
+
+      <div class="status" id="status-batch"></div>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORY_MAP = { psy: '轻心理', doc: '轻纪实' };
+
+    // ===== 批量类别切换 =====
+    let batchCategory = '轻心理';
+    document.querySelectorAll('.batch-option').forEach((opt) => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.batch-option').forEach((o) => o.classList.remove('active'));
+        opt.classList.add('active');
+        batchCategory = opt.dataset.cat;
+      });
+    });
+
+    // ===== 汇编 tab 切换（链接 / 文档） =====
+    document.querySelectorAll('#assemble-tabs .assemble-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const key = tab.dataset.tab;
+        document.querySelectorAll('#assemble-tabs .assemble-tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.assemble-panel').forEach((p) => p.classList.remove('active'));
+        document.getElementById('panel-' + key).classList.add('active');
+      });
+    });
+
+    // ===== 批量输入实时识别链接数 =====
+    const WECHAT_LINK_RE = /https?:\/\/mp\.weixin\.qq\.com\/s\/[A-Za-z0-9_-]+/g;
+    document.getElementById('batch-text').addEventListener('input', (e) => {
+      const links = (e.target.value.match(WECHAT_LINK_RE) || []).filter(
+        (v, i, a) => a.indexOf(v) === i
+      );
+      const el = document.getElementById('batch-count');
+      el.textContent = links.length > 0
+        ? `已识别到 ${links.length} 个链接`
+        : '尚未识别到链接';
+    });
+
+    function setStatus(key, type, html) {
+      const el = document.getElementById('status-' + key);
+      el.className = 'status show ' + type;
+      el.innerHTML = html;
+    }
+
+    function parseFilename(disposition) {
+      if (!disposition) return '';
+      const m = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (m) return decodeURIComponent(m[1]);
+      const m2 = disposition.match(/filename="?([^";]+)"?/i);
+      if (m2) return m2[1];
+      return '';
+    }
+
+    async function convert(key) {
+      const category = CATEGORY_MAP[key];
+      const url = document.getElementById('url-' + key).value.trim();
+      const btn = document.getElementById('btn-' + key);
+      if (!url) {
+        setStatus(key, 'error', '请先粘贴文章链接');
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus(key, 'working', '<span class="spinner"></span>正在抓取文章内容…');
+
+      try {
+        const res = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, category }),
+        });
+
+        if (!res.ok) {
+          let msg = '处理失败（HTTP ' + res.status + '）';
+          try {
+            const j = await res.json();
+            if (j.error) msg = j.error;
+          } catch (e) {}
+          throw new Error(msg);
+        }
+
+        setStatus(key, 'working', '<span class="spinner"></span>正在下载图片并生成 Word…');
+
+        const blob = await res.blob();
+        let filename = parseFilename(res.headers.get('Content-Disposition'));
+        if (!filename) filename = `文章（${category}）.docx`;
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        setStatus(key, 'done', '✅ 导出成功！文件已下载：<b>' + filename + '</b>');
+      } catch (err) {
+        setStatus(key, 'error', '❌ ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function convertBatch() {
+      const text = document.getElementById('batch-text').value.trim();
+      const btn = document.getElementById('btn-batch');
+      if (!text) {
+        setStatus('batch', 'error', '请先粘贴包含文章链接的内容');
+        return;
+      }
+
+      const links = (text.match(WECHAT_LINK_RE) || []).filter(
+        (v, i, a) => a.indexOf(v) === i
+      );
+      if (links.length === 0) {
+        setStatus('batch', 'error', '未识别到微信公众号文章链接（需包含 mp.weixin.qq.com/s/ 开头）');
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus('batch', 'working',
+        `<span class="spinner"></span>已识别 ${links.length} 个链接，正在批量抓取（可能耗时较长，请耐心等待）…`);
+
+      try {
+        const res = await fetch('/api/convert-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, category: batchCategory }),
+        });
+
+        if (!res.ok) {
+          let msg = '处理失败（HTTP ' + res.status + '）';
+          try {
+            const j = await res.json();
+            if (j.error) msg = j.error;
+          } catch (e) {}
+          throw new Error(msg);
+        }
+
+        setStatus('batch', 'working', '<span class="spinner"></span>正在打包 zip…');
+
+        const blob = await res.blob();
+        let filename = parseFilename(res.headers.get('Content-Disposition'));
+        if (!filename) filename = `批量导出_${batchCategory}.zip`;
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        setStatus('batch', 'done',
+          `✅ 批量导出成功！共 ${links.length} 个链接，已下载：<b>${filename}</b>（内含「批量抓取结果.txt」可查看每篇成功/失败情况）`);
+      } catch (err) {
+        setStatus('batch', 'error', '❌ ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ===== 汇编：多链接整合为一个 Word =====
+    async function assemble() {
+      const text = document.getElementById('url-hui').value.trim();
+      const btn = document.getElementById('btn-hui');
+      if (!text) {
+        setStatus('hui', 'error', '请先粘贴包含文章链接的内容');
+        return;
+      }
+
+      const links = (text.match(WECHAT_LINK_RE) || []).filter(
+        (v, i, a) => a.indexOf(v) === i
+      );
+      if (links.length === 0) {
+        setStatus('hui', 'error', '未识别到微信公众号文章链接（需包含 mp.weixin.qq.com/s/ 开头）');
+        return;
+      }
+
+      btn.disabled = true;
+      setStatus('hui', 'working',
+        `<span class="spinner"></span>已识别 ${links.length} 个链接，正在按顺序抓取并整合（可能耗时较长，请耐心等待）…`);
+
+      try {
+        const res = await fetch('/api/assemble', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!res.ok) {
+          let msg = '处理失败（HTTP ' + res.status + '）';
+          try {
+            const j = await res.json();
+            if (j.error) msg = j.error;
+          } catch (e) {}
+          throw new Error(msg);
+        }
+
+        setStatus('hui', 'working', '<span class="spinner"></span>正在生成整合文档…');
+
+        const blob = await res.blob();
+        let filename = parseFilename(res.headers.get('Content-Disposition'));
+        if (!filename) filename = '汇编.docx';
+
+        // 解析后端返回的处理结果摘要
+        let summary = '';
+        try {
+          const raw = res.headers.get('X-Assemble-Result');
+          if (raw) {
+            const meta = JSON.parse(decodeURIComponent(raw));
+            summary = `（成功 ${meta.success}/${meta.total} 篇`;
+            summary += meta.failed > 0 ? `，失败 ${meta.failed} 篇）` : '）';
+          }
+        } catch (e) {}
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        setStatus('hui', 'done',
+          `✅ 整合成功！共 ${links.length} 个链接${summary}，已下载：<b>${filename}</b>`);
+      } catch (err) {
+        setStatus('hui', 'error', '❌ ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ===== 搜索汇编：续跑清单渲染与一键续跑 =====
+    function renderRetryBox(meta) {
+      const box = document.getElementById('retry-box');
+      if (!meta.retryTitles || meta.retryTitles.length === 0) {
+        box.style.display = 'none';
+        return;
+      }
+      const lines = [];
+      if (meta.account) lines.push(`公众号：${meta.account}`);
+      lines.push(...meta.retryTitles);
+      document.getElementById('retry-count').textContent = meta.retryTitles.length;
+      document.getElementById('retry-text').value = lines.join('\n');
+      box.style.display = 'block';
+    }
+
+    function retryFailed() {
+      const text = document.getElementById('retry-text').value.trim();
+      if (!text) return;
+      document.getElementById('search-hui').value = text;
+      assembleSearch();
+    }
+
+    // ===== 汇编：按标题搜索定位并整合为一个 Word =====
+    async function assembleSearch() {
+      const text = document.getElementById('search-hui').value.trim();
+      const btn = document.getElementById('btn-search-hui');
+      const statusId = 'search-hui';
+      if (!text) {
+        setStatus(statusId, 'error', '请先粘贴文章标题列表');
+        return;
+      }
+      const lineCount = text.split(/\r?\n/).filter((line) => line.trim() && !/^公众号/.test(line.trim())).length;
+
+      btn.disabled = true;
+      document.getElementById('retry-box').style.display = 'none';
+      setStatus(statusId, 'working',
+        `<span class="spinner"></span>共 ${lineCount} 篇，正在逐篇搜索定位（含限速，预计 ${Math.ceil(lineCount * 8 / 60)} 分钟左右，请勿关闭页面）…`);
+
+      try {
+        const res = await fetch('/api/assemble-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+
+        if (!res.ok) {
+          let message = '处理失败';
+          try { message = (await res.json()).error || message; } catch (e) {}
+          throw new Error(message);
+        }
+
+        setStatus(statusId, 'working', '<span class="spinner"></span>正在生成汇编文档…');
+
+        const blob = await res.blob();
+        let filename = parseFilename(res.headers.get('Content-Disposition'));
+        if (!filename) filename = '汇编_按标题搜索.zip';
+
+        let summary = '';
+        try {
+          const raw = res.headers.get('X-Assemble-Result');
+          if (raw) {
+            const meta = JSON.parse(decodeURIComponent(raw));
+            summary = `（定位并汇编成功 ${meta.success}/${meta.total} 篇`;
+            summary += meta.failed > 0 ? `，失败 ${meta.failed} 篇，详见清单）` : '）';
+            // 展示可续跑清单
+            renderRetryBox(meta);
+          }
+        } catch (e) {}
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+
+        if (summary.startsWith('（定位并汇编成功 0/')) {
+          setStatus(statusId, 'error',
+            `⚠️ 本次 0 篇成功，已下载失败清单：<b>${filename}</b>。可在下方「续跑清单」点一键续跑，隔一段时间再试成功率更高`);
+        } else {
+          setStatus(statusId, 'done',
+            `✅ 完成！${summary}，已下载：<b>${filename}</b>（内含汇编 Word 与搜索定位结果清单）`);
+        }
+      } catch (err) {
+        setStatus(statusId, 'error', '❌ ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
