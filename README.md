@@ -3,6 +3,7 @@
 抓取微信公众号文章，自动排版生成排版规范的 Word 文档（`.docx`），支持单篇、批量、以及"只有标题没有链接"的搜索汇编。
 
 > 详细使用说明见 [`使用说明.md`](使用说明.md)；搭建流程与出版工作流示意图见 [`docs/公众号文章转Word工具_搭建流程图.pdf`](docs/公众号文章转Word工具_搭建流程图.pdf)；原工具界面快照见 [`docs/wechat-to-word工具网页.pdf`](docs/wechat-to-word工具网页.pdf)。
+> **部署到 GitHub 的详细分步流程见 [`DEPLOY.md`](DEPLOY.md)**（含 SSH/PAT 认证、推送命令、让外部同事使用的三种方式）。
 
 ## 功能一览
 
